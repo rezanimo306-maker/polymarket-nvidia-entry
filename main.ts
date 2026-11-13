@@ -86,7 +86,8 @@ function forecast(m: CaseMarket, horizon: number): number[][] {
   const rows: number[][] = [];
   for (let h = 1; h <= horizon; h++) {
     // Longest change window the history supports at this horizon.
-    const hEff = Math.max(1, Math.min(h, n - 1 - start));
+    const maxDelta = n - 1 - start;
+    const hEff = Math.max(1, Math.min(h, maxDelta));
     const deltas: number[] = [];
     for (let t = start + hEff; t < n; t++) deltas.push(prices[t] - prices[t - hEff]);
     if (deltas.length === 0) {
@@ -94,11 +95,12 @@ function forecast(m: CaseMarket, horizon: number): number[][] {
       continue;
     }
     const scale = Math.sqrt(h / hEff);
+    const sqrtH = Math.sqrt(h);
     deltas.sort((a, b) => a - b);
     const qs = QUANTILES.map((t) => quantile(deltas, t) * scale);
     const med = qs[2];
     const off = qs.map((q) => q - med);
-    const fl = OUTER_FLOOR * Math.sqrt(h);
+    const fl = OUTER_FLOOR * sqrtH;
     off[0] = Math.min(off[0], -fl);
     off[4] = Math.max(off[4], fl);
     const row = off.map((o) => price6(x + o));
